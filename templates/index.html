@@ -46,7 +46,7 @@
                 <div class="bg-light p-2 rounded mb-3 text-center small text-secondary">
                     📍 <strong>Meeting Point:</strong> {{ tour.meeting_point }}
                 </div>
-                <a href="#" class="btn btn-outline-primary w-100 mt-auto fw-semibold">View Details & Reserve</a>
+                <a href="{{ url_for('tour_details', tour_id=tour.id) }}" class="btn btn-outline-primary w-100 mt-auto fw-semibold">View Details & Reserve</a>
             </div>
         </div>
     </div>

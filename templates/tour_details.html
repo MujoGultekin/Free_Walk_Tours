@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 p-4 mb-4">
+            <h1 class="fw-bold text-primary mb-3">{{ tour.title }}</h1>
+            <p class="lead text-secondary">{{ tour.description }}</p>
+            <hr>
+            <h5 class="fw-bold text-dark">📍 Strategic Itinerary Stops</h5>
+            <p class="text-muted font-monospace">{{ tour.stops }}</p>
+            <div class="row g-3 mt-2">
+                <div class="col-6 col-md-3"><strong>🗣️ Language:</strong> <br><span class="badge bg-secondary">{{ tour.language }}</span></div>
+                <div class="col-6 col-md-3"><strong>⏱️ Duration:</strong> <br>{{ tour.duration }} Minutes</div>
+                <div class="col-6 col-md-3"><strong>👥 Maximum Capacity:</strong> <br>{{ tour.max_participants }} People</div>
+                <div class="col-6 col-md-3"><strong>🏛️ Meeting Point:</strong> <br>{{ tour.meeting_point }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow border-0 position-sticky" style="top: 20px;">
+            <div class="card-body p-4">
+                <h4 class="fw-bold text-dark mb-3">Book This Tour</h4>
+                {% if current_user.is_authenticated and current_user.role == 'participant' %}
+                <form method="POST" action="{{ url_for('book_tour', tour_id=tour.id) }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Target Date</label>
+                        <input type="date" name="tour_date" class="form-control" required min="2026-06-23">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Additional Guests (Max 3)</label>
+                        <select name="additional_count" class="form-select">
+                            <option value="0">Just Me (1 Person)</option>
+                            <option value="1">Me + 1 Guest</option>
+                            <option value="2">Me + 2 Guests</option>
+                            <option value="3">Me + 3 Guests</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Guest Full Names (Comma separated)</label>
+                        <input type="text" name="additional_names" class="form-control" placeholder="e.g. Jane Doe, Bob Smith">
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100 text-dark fw-bold py-2 shadow-sm">Confirm Booking Log</button>
+                </form>
+                {% elif current_user.is_authenticated and current_user.role != 'participant' %}
+                <div class="alert alert-warning small mb-0">Only registered Touristic Participant profiles can perform booking logs.</div>
+                {% else %}
+                <div class="alert alert-info small mb-0">Please <a href="{{ url_for('login') }}" class="fw-bold">Login</a> as a tourist to book this walking tour.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
