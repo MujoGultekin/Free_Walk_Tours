@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow border-0">
+            <div class="card-body p-4">
+                <h3 class="fw-bold text-dark mb-3">Modify Tour Specifications</h3>
+                
+                {% if has_reservation %}
+                <div class="alert alert-warning small">
+                    ⚠️ <strong>Notice:</strong> This walking tour contains active tourist reservations. Core logistical parameters (Language, Capacity, Duration) are permanently locked.
+                </div>
+                {% endif %}
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tour Title</label>
+                        <input type="text" name="title" class="form-control" value="{{ tour.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Meeting Point Location</label>
+                        <input type="text" name="meeting_point" class="form-control" value="{{ tour.meeting_point }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Duration (Minutes)</label>
+                        <input type="number" name="duration" class="form-control" value="{{ tour.duration }}" required {% if has_reservation %}readonly{% endif %}>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Language Tier</label>
+                        <input type="text" name="language" class="form-control" value="{{ tour.language }}" required {% if has_reservation %}readonly{% endif %}>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Maximum Attendees Capacity</label>
+                        <input type="number" name="max_participants" class="form-control" value="{{ tour.max_participants }}" required {% if has_reservation %}readonly{% endif %}>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Itinerary Stops (Comma separated)</label>
+                        <input type="text" name="stops" class="form-control" value="{{ tour.stops }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Public Context Description</label>
+                        <textarea name="description" class="form-control" rows="4" required>{{ tour.description }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm py-2">Save Alterations</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

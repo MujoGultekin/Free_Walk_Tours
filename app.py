@@ -4,9 +4,15 @@ from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'roma_secret_key_2026'
+
+# Configure upload path for tour evidence photos
+UPLOAD_FOLDER = os.path.join('static', 'uploads')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -39,7 +45,7 @@ def load_user(user_id):
 def inject_now():
     return {'current_year': 2026}
 
-# --- EXISTING ROUTES ---
+# --- ROUTES ---
 
 @app.route('/')
 def index():
@@ -60,7 +66,6 @@ def index():
     conn.close()
     return render_template('index.html', tours=tours)
 
-# --- NEW ROUTE: TOUR DETAILS & BOOKING FORM ---
 @app.route('/tour/<int:tour_id>')
 def tour_details(tour_id):
     conn = get_db_connection()
@@ -70,30 +75,26 @@ def tour_details(tour_id):
         flash('Tour not found.', 'danger')
         return redirect(url_for('index'))
         
-    # Fetch weekly available days for this tour
     schedules = conn.execute('SELECT * FROM tour_schedules WHERE tour_id = ?', (tour_id,)).fetchall()
     conn.close()
     return render_template('tour_details.html', tour=tour, schedules=schedules)
 
-# --- NEW ROUTE: PROCESS RESERVATION ---
 @app.route('/book_tour/<int:tour_id>', methods=['POST'])
 @login_required
 def book_tour(tour_id):
     if current_user.role != 'participant':
-        flash('Only registered tourists/participants can book tours.', 'danger')
+        flash('Only registered tourists can book tours.', 'danger')
         return redirect(url_for('index'))
         
     tour_date = request.form.get('tour_date')
     additional_count = int(request.form.get('additional_count', 0))
     additional_names = request.form.get('additional_names', '')
 
-    # Validation: Maximum of 3 additional guests allowed (+1 buyer = 4 total)
     if additional_count > 3:
         flash('You can only add a maximum of 3 additional guests.', 'danger')
         return redirect(url_for('tour_details', tour_id=tour_id))
 
     conn = get_db_connection()
-    # Insert new booking into database
     conn.execute('''
         INSERT INTO reservations (tour_id, participant_id, tour_date, additional_count, additional_names)
         VALUES (?, ?, ?, ?, ?)
@@ -104,7 +105,6 @@ def book_tour(tour_id):
     flash('Reservation successfully confirmed!', 'success')
     return redirect(url_for('participant_profile'))
 
-# --- NEW ROUTE: CANCEL RESERVATION (WITH 24-HOUR CONSTRAINT) ---
 @app.route('/cancel_booking/<int:reservation_id>', methods=['POST'])
 @login_required
 def cancel_booking(reservation_id):
@@ -121,17 +121,14 @@ def cancel_booking(reservation_id):
         flash('Reservation log not found.', 'danger')
         return redirect(url_for('participant_profile'))
 
-    # Strict Exam Constraint Rule: Verification of 24-hour limit prior to departure
     tour_datetime_str = f"{res['tour_date']} {res['start_time']}"
     tour_datetime = datetime.strptime(tour_datetime_str, '%Y-%m-%d %H:%M')
     
-    # Calculate time remaining until tour starts
     if tour_datetime - datetime.now() < timedelta(hours=24):
         conn.close()
         flash('Cancellation denied. Bookings can only be altered up to 24 hours prior to departure.', 'danger')
         return redirect(url_for('participant_profile'))
 
-    # Process removal from log
     conn.execute('DELETE FROM reservations WHERE id = ?', (reservation_id,))
     conn.commit()
     conn.close()
@@ -139,7 +136,107 @@ def cancel_booking(reservation_id):
     flash('Reservation cancelled successfully.', 'info')
     return redirect(url_for('participant_profile'))
 
-# --- EXISTING AUTHENTICATION ROUTES ---
+# --- NEW ROUTE: EDIT TOUR (WITH LOCK CONSTRAINT ON EXISTING RESERVATIONS) ---
+@app.route('/edit_tour/<int:tour_id>', methods=['GET', 'POST'])
+@login_required
+def edit_tour(tour_id):
+    if current_user.role != 'guide':
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('index'))
+        
+    conn = get_db_connection()
+    tour = conn.execute('SELECT * FROM tours WHERE id = ? AND guide_id = ?', (tour_id, current_user.id)).fetchone()
+    
+    if not tour:
+        conn.close()
+        flash('Tour profile not found.', 'danger')
+        return redirect(url_for('guide_profile'))
+        
+    # Check if this tour has at least one active reservation log
+    has_reservation = conn.execute('SELECT id FROM reservations WHERE tour_id = ?', (tour_id,)).fetchone()
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        meeting_point = request.form.get('meeting_point')
+        duration = int(request.form.get('duration'))
+        description = request.form.get('description')
+        stops = request.form.get('stops')
+        
+        # Mandatory fields if modifications are locked due to exam rule
+        if has_reservation:
+            # Guide can only alter description, title, meeting point, and itinerary stops
+            conn.execute('''
+                UPDATE tours 
+                SET title = ?, meeting_point = ?, description = ?, stops = ?
+                WHERE id = ?
+            ''', (title, meeting_point, description, stops, tour_id))
+            flash('Tour description elements modified. Core attributes remained locked due to active bookings.', 'warning')
+        else:
+            # Guide can alter everything if no bookings exist
+            language = request.form.get('language')
+            max_participants = int(request.form.get('max_participants'))
+            conn.execute('''
+                UPDATE tours 
+                SET title = ?, meeting_point = ?, duration = ?, description = ?, stops = ?, language = ?, max_participants = ?
+                WHERE id = ?
+            ''', (title, meeting_point, duration, description, stops, language, max_participants, tour_id))
+            flash('Tour profile completely updated successfully.', 'success')
+            
+        conn.commit()
+        conn.close()
+        return redirect(url_for('guide_profile'))
+        
+    conn.close()
+    return render_template('edit_tour.html', tour=tour, has_reservation=has_reservation)
+
+# --- NEW ROUTE: POST-TOUR SUMMARY REPORTING ---
+@app.route('/report_tour/<int:tour_id>', methods=['GET', 'POST'])
+@login_required
+def report_tour(tour_id):
+    if current_user.role != 'guide':
+        flash('Unauthorized access privileges.', 'danger')
+        return redirect(url_for('index'))
+        
+    conn = get_db_connection()
+    tour = conn.execute('SELECT * FROM tours WHERE id = ? AND guide_id = ?', (tour_id, current_user.id)).fetchone()
+    
+    if not tour:
+        conn.close()
+        flash('Tour data missing.', 'danger')
+        return redirect(url_for('guide_profile'))
+        
+    if request.method == 'POST':
+        tour_date = request.form.get('tour_date')
+        actual_participants = int(request.form.get('actual_participants'))
+        
+        # Process files collection (Accept between 1 and 5 files as required)
+        uploaded_files = request.files.getlist('evidence_photos')
+        valid_files = [f for f in uploaded_files if f.filename != '']
+        
+        if len(valid_files) < 1 or len(valid_files) > 5:
+            flash('You must upload between 1 and 5 dynamic evidence photos from the event.', 'danger')
+            conn.close()
+            return redirect(url_for('report_tour', tour_id=tour_id))
+            
+        # Save primary evidence filename reference
+        primary_photo = secure_filename(valid_files[0].filename)
+        for f in valid_files:
+            f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
+            
+        conn.execute('''
+            INSERT INTO post_tour_reports (tour_id, tour_date, actual_participants, evidence_photo)
+            VALUES (?, ?, ?, ?)
+        ''', (tour_id, tour_date, actual_participants, primary_photo))
+        conn.commit()
+        conn.close()
+        
+        flash('Post-tour verification report submitted successfully to the platform metrics.', 'success')
+        return redirect(url_for('guide_profile'))
+        
+    conn.close()
+    return render_template('report_tour.html', tour=tour)
+
+# --- AUTHENTICATION & BASE ROUTES ---
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
