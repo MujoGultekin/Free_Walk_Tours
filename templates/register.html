@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow border-0">
+            <div class="card-body p-5">
+                <h2 class="text-center fw-bold mb-4">Create Account</h2>
+                <form method="POST" action="{{ url_for('register') }}">
+                    <div class="row g-3 mb-3">
+                        <div class="col">
+                            <label class="form-label fw-semibold">First Name</label>
+                            <input type="text" name="first_name" class="form-control" required>
+                        </div>
+                        <div class="col">
+                            <label class="form-label fw-semibold">Last Name</label>
+                            <input type="text" name="last_name" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email Address</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Account Role Type</label>
+                        <select name="role" id="roleSelect" class="form-select" onchange="toggleLanguageSelection()" required>
+                            <option value="participant">Participant (Tourist)</option>
+                            <option value="guide">Professional Guide</option>
+                        </select>
+                    </div>
+                    
+                    <div id="guideLanguagesSection" class="mb-4 border p-3 rounded bg-light" style="display: none;">
+                        <label class="form-label d-block fw-bold text-secondary">Spoken Languages (Select at least one)</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="languages" value="Italian">
+                            <label class="form-check-label">Italian</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="languages" value="English">
+                            <label class="form-check-label">English</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="languages" value="Spanish">
+                            <label class="form-check-label">Spanish</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="languages" value="Portuguese">
+                            <label class="form-check-label">Portuguese</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" name="languages" value="German">
+                            <label class="form-check-label">German</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-warning w-100 py-2 text-dark fw-bold shadow-sm">Register Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleLanguageSelection() {
+    var role = document.getElementById("roleSelect").value;
+    var langSection = document.getElementById("guideLanguagesSection");
+    if(role === "guide") {
+        langSection.style.display = "block";
+    } else {
+        langSection.style.display = "none";
+    }
+}
+</script>
+{% endblock %}

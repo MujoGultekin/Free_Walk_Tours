@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="fw-bold mb-4">My Booked Tour Reservations</h2>
+
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    {% for res in reservations %}
+    <div class="col">
+        <div class="card h-100 shadow-sm border-0 border-start border-warning border-4">
+            <div class="card-body">
+                <h5 class="card-title fw-bold text-dark">{{ res.title }}</h5>
+                <p class="mb-2 text-muted">🗓️ <strong>Date:</strong> {{ res.tour_date }}</p>
+                <p class="mb-2">📍 <strong>Meeting Point:</strong> {{ res.meeting_point }}</p>
+                <div class="p-2 bg-light rounded text-secondary small mb-3">
+                    👥 <strong>Booking Size:</strong> {{ res.additional_count + 1 }} Person(s)
+                    {% if res.additional_names %}
+                        <br><strong>Guests:</strong> {{ res.additional_names }}
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge bg-success py-2 px-3">Confirmed Reservation</span>
+                    <button class="btn btn-sm btn-outline-danger">Cancel Booking</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center my-5">
+        <p class="text-muted fs-5">You have not reserved any tours yet. Explore the homepage to book your next trip!</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

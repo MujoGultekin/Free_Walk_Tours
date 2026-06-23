@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="p-4 bg-dark text-white rounded shadow-sm mb-4">
+    <h2 class="fw-bold mb-0 text-warning">🛡️ Platform Administration Control Center</h2>
+    <p class="text-white-50 mb-0">System metrics monitoring and professional guide records verification panel.</p>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-white shadow-sm border-0 text-center p-3">
+            <h6 class="text-muted text-uppercase small font-monospace">Total Guides</h6>
+            <div class="display-6 fw-bold text-primary">{{ total_guides }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-white shadow-sm border-0 text-center p-3">
+            <h6 class="text-muted text-uppercase small font-monospace">Registered Tourists</h6>
+            <div class="display-6 fw-bold text-success">{{ total_parts }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-white shadow-sm border-0 text-center p-3">
+            <h6 class="text-muted text-uppercase small font-monospace">Active Tours</h6>
+            <div class="display-6 fw-bold text-info">{{ total_tours }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-white shadow-sm border-0 text-center p-3">
+            <h6 class="text-muted text-uppercase small font-monospace">Total Bookings</h6>
+            <div class="display-6 fw-bold text-warning">{{ total_res }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-secondary text-white fw-bold">Verified Guides Directory</div>
+            <div class="card-body p-0">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Guide Identity</th>
+                            <th>Email Address</th>
+                            <th>Languages</th>
+                            <th>Created Tours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in guides_with_tours %}
+                        <tr>
+                            <td class="fw-bold text-dark">{{ record.info.first_name }} {{ record.info.last_name }}</td>
+                            <td class="font-monospace text-muted small">{{ record.info.email }}</td>
+                            <td><span class="badge bg-dark">{{ record.info.languages }}</span></td>
+                            <td>
+                                {% if record.tours %}
+                                    <ul class="list-unstyled mb-0 small text-primary">
+                                    {% for t in record.tours %}
+                                        <li>📌 {{ t.title }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted small italic">None created yet</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-secondary text-white fw-bold">Bookings Distributed per Language</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Language</th>
+                            <th class="text-center">Reservations</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in lang_stats %}
+                        <tr>
+                            <td class="fw-semibold text-dark">{{ stat.language }}</td>
+                            <td class="text-center fw-bold text-success font-monospace">{{ stat.count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

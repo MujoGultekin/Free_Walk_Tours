@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Welcome, Guide {{ current_user.first_name }}</h2>
+    <button class="btn btn-success fw-semibold shadow-sm">+ Create New Tour</button>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-dark text-white fw-bold">My Created Tours Overview</div>
+    <div class="card-body p-0">
+        <table class="table table-hover table-striped mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Tour Title</th>
+                    <th>Meeting Point</th>
+                    <th>Duration</th>
+                    <th>Language</th>
+                    <th>Max Cap</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tour in tours %}
+                <tr>
+                    <td class="fw-bold text-primary">{{ tour.title }}</td>
+                    <td>{{ tour.meeting_point }}</td>
+                    <td>{{ tour.duration }} mins</td>
+                    <td><span class="badge bg-secondary">{{ tour.language }}</span></td>
+                    <td>{{ tour.max_participants }} pax</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary">Edit Details</button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">You haven't designed any custom tours yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
